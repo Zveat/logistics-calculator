@@ -69,6 +69,9 @@ def calculate_intercity():
     cost = (tariff / capacity) * weight * coef
     return jsonify({"Стоимость": f"{round(cost)} тг"})
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+import os
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
 
