@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор логистики</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f8f9fa;
+            margin: 0;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            width: 350px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+            margin-top: 10px;
+        }
+        label {
+            font-size: 14px;
+            font-weight: bold;
+            width: 100%;
+            text-align: left;
+        }
+        select, input {
+            width: 100%; /* Поля теперь одинаковые */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: left;
+            white-space: pre-line;
+        }
+        .required {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Калькулятор логистики</h1>
+
+    <div class="form-group">
+        <label>Тип доставки: <span class="required">*</span></label>
+        <select id="logistics-type">
+            <option value="city">По городу</option>
+            <option value="intercity">Межгород</option>
+        </select>
+    </div>
+
+    <div id="city-form">
+        <div class="form-group">
+            <label>Вес (кг): <span class="required">*</span></label>
+            <input type="number" id="city-weight">
+        </div>
+        <div class="form-group">
+            <label>Длина (м) (опционально):</label>
+            <input type="number" id="city-length">
+        </div>
+        <button id="calculate">Рассчитать</button>
+    </div>
+
+    <div id="intercity-form" style="display:none;">
+        <div class="form-group">
+            <label>Направление: <span class="required">*</span></label>
+            <select id="direction">
+                <option value="Алматы-Астана">Алматы → Астана</option>
+                <option value="Алматы-Шымкент">Алматы → Шымкент</option>
+                <option value="Алматы-Актау">Алматы → Актау</option>
+                <option value="Алматы-Атырау">Алматы → Атырау</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Вес (тонн): <span class="required">*</span></label>
+            <input type="number" id="intercity-weight">
+        </div>
+        <button id="calculate-intercity">Рассчитать</button>
+    </div>
+
+    <div class="result">
+        <p id="result-value"></p>
+        <p id="alternative-results"></p>
+    </div>
+</div>
+
+<script>
+    document.getElementById('logistics-type').addEventListener('change', function() {
+        document.getElementById('city-form').style.display = this.value === 'city' ? 'block' : 'none';
+        document.getElementById('intercity-form').style.display = this.value === 'intercity' ? 'block' : 'none';
+    });
+
+    document.getElementById('calculate').addEventListener('click', async () => {
+        const weight = parseFloat(document.getElementById('city-weight').value);
+        const length = parseFloat(document.getElementById('city-length').value) || null;
+
+        if (!weight) {
+            alert("Введите вес груза!");
+            return;
+        }
+
+        const response = await fetch('/calculate_city', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ weight, length })
+        });
+
+        const result = await response.json();
+
+        let resultText = `✅ Лучший вариант:\n${result["Лучший вариант"].replace(/\(|\)/g, "").replace(" тг тг", " тг")}`;
+        let alternativeText = result["Альтернатива"] ? `✅ Альтернатива:\n${result["Альтернатива"].replace(/\(|\)/g, "").replace(" тг тг", " тг")}` : "";
+
+        document.getElementById('result-value').textContent = resultText;
+        document.getElementById('alternative-results').textContent = alternativeText;
+    });
+
+    document.getElementById('calculate-intercity').addEventListener('click', async () => {
+        const direction = document.getElementById('direction').value;
+        const weight = parseFloat(document.getElementById('intercity-weight').value);
+
+        if (!weight) {
+            alert("Введите вес груза!");
+            return;
+        }
+
+        const response = await fetch('/calculate_intercity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ direction, weight })
+        });
+
+        const result = await response.json();
+        document.getElementById('result-value').textContent = `✅ Стоимость:\n${result["Стоимость"].replace(" тг тг", " тг")}`;
+        document.getElementById('alternative-results').textContent = "";
+    });
+</script>
+
+</body>
+</html>
+
